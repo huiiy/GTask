@@ -12,7 +12,8 @@ A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
 
 ## Screenshots
 
-![Tasks TUI Demo](./demo/Peek%202025-10-15%2007-21.gif)
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/b2c4e1dc-766c-475f-8e6f-2b1eed6f205f" />
+
 
 ## Installation
 
