@@ -16,34 +16,40 @@ A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
 
 ## Installation
 
-1.  **Clone the repository:**
+1.  **Install via pip:**
+
+    ```bash
+    pip install tasks-tui-app
+    ```
+
+2.  **Clone the repository (optional, for development):**
 
     ```bash
     git clone https://github.com/your-username/Gtask.git
     cd Gtask
     ```
 
-2.  **Install the dependencies:**
+3.  **Install the dependencies (if cloning for development):**
 
     ```bash
     pip install -r requirements.txt
     ```
 
-3.  **Enable the Google Tasks API and download your `client_secrets.json` file:**
+4.  **Enable the Google Tasks API and download your `client_secrets.json` file:**
 
     *   Go to the [Google API Console](https://console.developers.google.com/).
     *   Create a new project.
     *   Enable the **Google Tasks API** for your project.
     *   Create an **OAuth 2.0 Client ID** for a **Desktop application**.
     *   Download the JSON file and rename it to `client_secrets.json`.
-    *   Place the `client_secrets.json` file in the `tasks-tui` directory.
+    *   Place the `client_secrets.json` file in the directory where you will run the `tasks-tui` command.
 
 ## Usage
 
 To run the application, use the following command:
 
 ```bash
-python3 -m tasks_tui.main
+tasks-tui
 ```
 
 When you run the application for the first time, it will open a web browser and ask you to authorize the application to access your Google Tasks. After you authorize the application, it will create a `token.json` file in the `tasks-tui` directory. This file contains your access and refresh tokens, so you won't have to authorize the application every time you run it.

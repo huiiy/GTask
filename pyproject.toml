@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tasks-tui-app"
-version = "0.1.0"
+version = "0.1.1"
 description = "A command-line TUI for managing Google Tasks."
 readme = "README.md"
 authors = [
@@ -26,4 +26,8 @@ dependencies = [
 [project.scripts]
 # This line (tasks-tui = ...) is likely what was failing to parse.
 tasks-tui = "tasks_tui.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tasks_tui"]
 
