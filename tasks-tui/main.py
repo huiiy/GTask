@@ -41,16 +41,23 @@ def handle_input(stdscr, app_state, ui_manager):
         return False
 
     # Movement
-    elif key == curses.KEY_UP:
+    elif key == curses.KEY_UP or key == ord('k'):
         if ui_manager.active_panel == 'tasks':
             ui_manager.update_task_selection(app_state.tasks, -1)
         elif ui_manager.active_panel == 'lists':
             ui_manager.update_list_selection(app_state.task_lists, -1)
-    elif key == curses.KEY_DOWN:
+    elif key == curses.KEY_DOWN or key == ord('j'):
         if ui_manager.active_panel == 'tasks':
             ui_manager.update_task_selection(app_state.tasks, 1)
         elif ui_manager.active_panel == 'lists':
             ui_manager.update_list_selection(app_state.task_lists, 1)
+    elif key == curses.KEY_LEFT or key == ord('h'):
+        if ui_manager.active_panel == 'tasks':
+            ui_manager.toggle_panel()
+    elif key == curses.KEY_RIGHT or key == ord('l'):
+        if ui_manager.active_panel == 'lists':
+            ui_manager.toggle_panel()
+            
 
     # Panel Switching
     elif key == ord('\t'): # TAB key
@@ -69,15 +76,50 @@ def handle_input(stdscr, app_state, ui_manager):
             app_state.change_active_list(selected_list["id"])
             ui_manager.selected_task_idx = 0 # Reset task selection
 
+    elif key == ord('w'):
+        app_state.refresh_data()
+
+    elif key == ord('r'):
+        if ui_manager.active_panel == 'tasks' and app_state.tasks:
+            new_title = ui_manager.get_user_input("New Task Title: ")
+            selected_task = app_state.tasks[ui_manager.selected_task_idx]
+            app_state.service.rename_task(app_state.active_list_id, selected_task["id"], new_title)
+            app_state.refresh_data() # Refresh display after change
+        elif ui_manager.active_panel == 'lists' and app_state.task_lists:
+            new_title = ui_manager.get_user_input("New List Title: ")
+            return
+
+    elif key == ord('d'):
+        if ui_manager.active_panel == 'tasks' and app_state.tasks:
+            selected_task = app_state.tasks[ui_manager.selected_task_idx]
+            app_state.service.delete_task(app_state.active_list_id, selected_task["id"])
+            app_state.refresh_data() # Refresh display after change
+        elif ui_manager.active_panel == 'lists' and app_state.task_lists:
+            selected_list = app_state.task_lists[ui_manager.selected_list_idx]
+            confirm = ui_manager.get_user_input(f"Delete list '{selected_list['title']}'? (y/n): ")
+            if confirm.lower() == 'y':
+                app_state.service.delete_list(selected_list["id"])
+                app_state.task_lists = app_state.service.get_task_lists()
+                if app_state.task_lists:
+                    app_state.change_active_list(app_state.task_lists[0]['id'])
+                else:
+                    app_state.active_list_id = None
+                app_state.refresh_data()
+
     # Add New Task
-    elif key in [ord('n'), ord('N')]:
+    elif key == ord('o'):
         if ui_manager.active_panel == 'tasks':
             new_title = ui_manager.get_user_input("New Task Title: ")
             if new_title:
                 app_state.service.add_task(app_state.active_list_id, new_title)
                 app_state.refresh_data() # Fetch and display the new task
+        else:
+            new_title = ui_manager.get_user_input("New List Title: ")
+            if new_title:
+                app_state.service.add_list(new_title)
+                app_state.refresh_data()
 
-    # TODO: Add 'A' for Add List, 'D' for Delete, etc.
+
 
     return True # Keep the loop running
 
@@ -95,13 +137,12 @@ def main_loop(stdscr):
     while running:
         # 2. Draw the UI based on current state
         try:
-            stdscr.clear()
             ui_manager.draw_layout(
                 app_state.task_lists,
                 app_state.tasks,
                 app_state.active_list_id
             )
-            stdscr.refresh()
+            curses.doupdate()
         except curses.error as e:
             # Handles window resize errors gracefully
             pass

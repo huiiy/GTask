@@ -24,6 +24,7 @@ class UIManager:
         curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Completed
         curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)   # Header
         curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK) # Active List
+        curses.init_pair(5, curses.COLOR_BLUE, curses.COLOR_BLACK)   # Selected
 
     def _draw_border(self, win, title):
         """Draws a simple box border and title."""
@@ -51,8 +52,8 @@ class UIManager:
         self._draw_task_panel(task_win, tasks)
 
         # 4. Refresh all windows
-        list_win.refresh()
-        task_win.refresh()
+        list_win.noutrefresh()
+        task_win.noutrefresh()
 
     def _draw_list_panel(self, win, lists, active_list_id):
         """Draws the Task List titles."""
@@ -73,7 +74,7 @@ class UIManager:
             if is_active:
                 attr |= curses.color_pair(4) # Yellow for the currently loaded list
             if is_selected:
-                attr |= curses.color_pair(1) # Highlight for cursor position
+                attr |= curses.color_pair(5)
 
             win.addstr(y_pos, 1, f"{list_title:<{max_x-2}}", attr)
 
@@ -102,18 +103,22 @@ class UIManager:
             symbol = "[ ]"
 
             if status == "completed":
-                attr |= curses.color_pair(2)
+                attr = curses.color_pair(2)
                 symbol = "[X]"
 
             if is_selected:
-                attr |= curses.color_pair(1)
+                attr = curses.color_pair(5)
 
             # Pad the title to ensure highlight fills the line
             display_line = f"{symbol} {task_title:<{max_x - 6}}"
             win.addstr(y_pos, 1, display_line[:max_x - 2], attr)
 
         # Draw a help footer
-        win.addstr(max_y - 1, 1, "ENTER: Toggle | TAB: Switch Panel | Q: Quit | N: New Task", curses.A_DIM)
+        win.addstr(max_y - 1, 1, "ENTER: Toggle | "
+                   "TAB: Switch Panel | "
+                   "Q: Quit | "
+                   "o: New Task |"
+                   "w: Write and Sync", curses.A_DIM)
 
     def update_task_selection(self, tasks, direction):
         """Moves the task selection cursor (up/down)."""
@@ -171,8 +176,8 @@ class UIManager:
             pass
         finally:
             curses.noecho()
-            self.stdscr.erase() # Clear the prompt line
-            self.stdscr.refresh()
+            input_win.erase()
+            input_win.refresh()
 
         return input_string
 

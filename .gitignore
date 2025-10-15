@@ -18,3 +18,7 @@ client_secrets.json
 dist/
 build/
 *.egg-info/
+
+# Dev Artifacts
+*.log
+*.swp

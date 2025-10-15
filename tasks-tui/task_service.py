@@ -51,11 +51,34 @@ class TaskService:
         result = self.service.tasks().update(tasklist=list_id, task=task_id, body=task).execute()
         return result
 
+    def delete_task(self, list_id, task_id):
+        if not list_id:
+            return None
+        result = self.service.tasks().delete(tasklist=list_id, task=task_id).execute()
+        return result
+
+    def rename_task(self, list_id, task_id, new_name):
+        if not list_id:
+            return None
+        task = self.service.tasks().get(tasklist=list_id, task=task_id).execute()
+        task['title'] = new_name
+        result = self.service.tasks().patch(tasklist=list_id, task=task_id, body=task).execute()
+        return result
+
     def set_active_list(self, list_id):
         """Changes the task list currently being viewed."""
         self.active_list_id = list_id
         return True
 
+    def add_list(self, list_name):
+        list_body = {'title': list_name}
+        result = self.service.tasklists().insert(body=list_body).execute()
+        return result
+
+    def delete_list(self, list_id):
+        result = self.service.tasklists().delete(tasklist=list_id).execute()
+        return result
+        
 # You would handle the API credential flow here:
 # if __name__ == '__main__':
 #     # Example of fetching real data in production
