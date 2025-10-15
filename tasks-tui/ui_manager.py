@@ -112,7 +112,17 @@ class UIManager:
                 attr = curses.color_pair(5)
 
             # Pad the title to ensure highlight fills the line
-            display_line = f"{symbol} {task_title:<{max_x - 6}}"
+            due_date_str = ""
+            if "due" in task:
+                try:
+                    # Google Tasks API returns 'due' in RFC 3339 format
+                    due_date = isoparse(task["due"])
+                    due_date_str = f" (Due: {due_date.strftime("%Y-%m-%d")})"
+                except ValueError:
+                    due_date_str = " (Invalid Date)"
+
+            display_line = f"{symbol} {task_title}{due_date_str}"
+            # Truncate if too long, ensuring space for selection highlight
             win.addstr(y_pos, 1, display_line[:max_x - 2], attr)
 
         # Draw a help footer
