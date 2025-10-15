@@ -4,8 +4,8 @@
 
 import curses
 from curses import wrapper
-from task_service import TaskService
-from ui_manager import UIManager
+from .task_service import TaskService
+from .ui_manager import UIManager
 import sys
 
 # Global State Management (simplified for TUI)
@@ -109,7 +109,7 @@ def main_loop(stdscr):
         # 3. Handle User Input
         running = handle_input(stdscr, app_state, ui_manager)
 
-if __name__ == "__main__":
+def cli():
     try:
         # The wrapper handles initialization and safe cleanup of the curses environment
         wrapper(main_loop)
@@ -117,3 +117,5 @@ if __name__ == "__main__":
         # Print the error before exiting the terminal session
         print(f"An error occurred: {e}", file=sys.stderr)
 
+if __name__ == "__main__":
+    cli()

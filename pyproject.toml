@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gtask"
+name = "tasks-tui-app"
 version = "0.1.0"
 description = "A command-line TUI for managing Google Tasks."
 readme = "README.md"
 authors = [
-    {name = "Huy Pham", email = "huyquangpham2005@gmail.com"},
+    {name = "Huy Pham", email = "huyquangpham2005@gmai.com"},
 ]
 license = {file = "LICENSE"}
 classifiers = [
@@ -20,8 +20,10 @@ classifiers = [
 dependencies = [
     "google-api-python-client",
     "google-auth-oauthlib",
-    "google-auth-httplib2",
+    "google-auth-httplib2", # This line MUST NOT have a comma at the end!
 ]
 
 [project.scripts]
-tasks-tui = "tasks_tui.main:main_loop"
+# This line (tasks-tui = ...) is likely what was failing to parse.
+tasks-tui = "tasks_tui.main:cli"
+
