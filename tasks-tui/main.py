@@ -16,6 +16,8 @@ class AppState:
         self.task_lists = self.service.get_task_lists()
         self.active_list_id = self.service.active_list_id
         self.tasks = self.service.get_tasks_for_list(self.active_list_id)
+        self.list_buffer = ""
+        self.task_buffer = ""
 
     def refresh_data(self):
         """Refreshes all data from the service layer."""
@@ -119,12 +121,14 @@ def handle_input(stdscr, app_state, ui_manager):
     elif key == ord('d'):
         if ui_manager.active_panel == 'tasks' and app_state.tasks:
             selected_task = app_state.tasks[ui_manager.selected_task_idx]
+            app_state.task_buffer = app_state.service.get_task(app_state.active_list_id, selected_task['id'])
             app_state.service.delete_task(app_state.active_list_id, selected_task["id"])
             app_state.refresh_data() # Refresh display after change
         elif ui_manager.active_panel == 'lists' and app_state.task_lists:
             selected_list = app_state.task_lists[ui_manager.selected_list_idx]
             confirm = ui_manager.get_user_input(f"Delete list '{selected_list['title']}'? (y/n): ")
             if confirm.lower() == 'y':
+                app_state.list_buffer = selected_list['title']
                 app_state.service.delete_list(selected_list["id"])
                 app_state.task_lists = app_state.service.get_task_lists()
                 if app_state.task_lists:
@@ -132,6 +136,14 @@ def handle_input(stdscr, app_state, ui_manager):
                 else:
                     app_state.active_list_id = None
                 app_state.refresh_data()
+
+    elif key == ord('p'):
+        if ui_manager.active_panel == 'tasks':
+            app_state.service.add_task_body(app_state.active_list_id, app_state.task_buffer)
+            app_state.refresh_data()
+        else:
+            app_state.service.add_list(app_state.list_buffer)
+            app_state.refresh_data()
 
     # Add New Task
     elif key == ord('o'):

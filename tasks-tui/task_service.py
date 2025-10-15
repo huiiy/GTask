@@ -44,6 +44,13 @@ class TaskService:
         result = self.service.tasks().insert(tasklist=list_id, body=task).execute()
         return result
 
+    def add_task_body(self, list_id, new_body):
+        if not list_id: 
+            return None
+        result = self.service.tasks().insert(tasklist=list_id, body=new_body).execute()
+        return result
+
+
     def toggle_task_status(self, list_id, task_id):
         """Toggles a task's status."""
         if not list_id:
@@ -96,6 +103,12 @@ class TaskService:
         task = self.service.tasks().get(tasklist=list_id, task=task_id).execute()
         task['notes'] = detail
         result = self.service.tasks().patch(tasklist=list_id, task=task_id, body=task).execute()
+        return result
+
+    def get_task(self, list_id, task_id):
+        if not list_id:
+            return None
+        result = self.service.tasks().get(tasklist=list_id, task=task_id).execute()
         return result
 
     def set_active_list(self, list_id):
