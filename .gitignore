@@ -1,0 +1,15 @@
+# Environment files
+.env
+venv/
+pycache/
+
+# build artifacts
+*.pyc
+dist/
+build/
+*.egg-info/
+
+# Google API Credentials
+client_secret.json
+token.json
+credentials.json
