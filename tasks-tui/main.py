@@ -56,6 +56,11 @@ def handle_input(stdscr, app_state, ui_manager):
             ui_manager.toggle_panel()
     elif key == curses.KEY_RIGHT or key == ord('l'):
         if ui_manager.active_panel == 'lists':
+            # TODO check if selected list is not current active list, reduce fetch time
+            selected_list = app_state.task_lists[ui_manager.selected_list_idx]
+            if app_state.active_list_id != selected_list['id']:
+                app_state.change_active_list(selected_list["id"])
+                ui_manager.selected_task_idx = 0 # Reset task selection
             ui_manager.toggle_panel()
             
 
@@ -76,6 +81,12 @@ def handle_input(stdscr, app_state, ui_manager):
             app_state.change_active_list(selected_list["id"])
             ui_manager.selected_task_idx = 0 # Reset task selection
 
+    elif key == ord('c'):
+            # Toggle task status
+            selected_task = app_state.tasks[ui_manager.selected_task_idx]
+            app_state.service.toggle_task_status(app_state.active_list_id, selected_task["id"])
+            app_state.refresh_data() # Refresh display after change
+
     elif key == ord('w'):
         app_state.refresh_data()
 
@@ -88,6 +99,22 @@ def handle_input(stdscr, app_state, ui_manager):
         elif ui_manager.active_panel == 'lists' and app_state.task_lists:
             new_title = ui_manager.get_user_input("New List Title: ")
             return
+
+    elif key == ord('a'):
+        if ui_manager.active_panel == 'tasks' and app_state.tasks:
+            new_date = ui_manager.get_user_input("Due Date: ")
+            selected_task = app_state.tasks[ui_manager.selected_task_idx]
+            app_state.service.change_date_task(app_state.active_list_id, selected_task['id'], new_date)
+            app_state.refresh_data()
+
+    elif key == ord('i'):
+        if ui_manager.active_panel == 'tasks' and app_state.tasks:
+            new_note = ui_manager.get_user_input("Notes: ")
+            selected_task = app_state.tasks[ui_manager.selected_task_idx]
+            app_state.service.change_detail_task(app_state.active_list_id, selected_task['id'], new_note)
+            app_state.refresh_data()
+
+
 
     elif key == ord('d'):
         if ui_manager.active_panel == 'tasks' and app_state.tasks:

@@ -6,6 +6,8 @@
 
 from googleapiclient.discovery import build
 from .auth import get_credentials
+from dateutil.parser import isoparse
+from dateutil.parser import ParserError
 
 class TaskService:
     """
@@ -62,6 +64,37 @@ class TaskService:
             return None
         task = self.service.tasks().get(tasklist=list_id, task=task_id).execute()
         task['title'] = new_name
+        result = self.service.tasks().patch(tasklist=list_id, task=task_id, body=task).execute()
+        return result
+
+    def change_date_task(self, list_id, task_id, date_str):
+        if not list_id:
+            return None
+        try:
+            # Parse the input date string into a datetime object
+            date_obj = isoparse(date_str)
+            # Format the datetime object to RFC 3339 string
+            # Google Tasks API expects 'Z' for UTC, not '+00:00'
+            due_date_rfc3339 = date_obj.isoformat() + 'Z'
+
+            task = self.service.tasks().get(tasklist=list_id, task=task_id).execute()
+            task['due'] = due_date_rfc3339
+            result = self.service.tasks().patch(tasklist=list_id, task=task_id, body=task).execute()
+            return result
+        except ParserError:
+            # Handle cases where the date_str is not a valid format
+            print(f"Error: Could not parse date string '{date_str}'. Please use a valid date format.")
+            return None
+        except Exception as e:
+            # Catch other potential errors during API call or network issues
+            print(f"An unexpected error occurred: {e}")
+            return None
+
+    def change_detail_task(self, list_id, task_id, detail):
+        if not list_id:
+            return None
+        task = self.service.tasks().get(tasklist=list_id, task=task_id).execute()
+        task['notes'] = detail
         result = self.service.tasks().patch(tasklist=list_id, task=task_id, body=task).execute()
         return result
 

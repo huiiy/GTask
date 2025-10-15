@@ -4,6 +4,7 @@
 # It should not contain any Google Tasks API interaction logic.
 
 import curses
+from dateutil.parser import isoparse
 
 class UIManager:
     """
@@ -87,7 +88,8 @@ class UIManager:
         max_y, max_x = win.getmaxyx()
 
         if not tasks:
-            win.addstr(1, 2, "No tasks in this list.", curses.A_DIM)
+            attr = curses.color_pair(5) if self.active_panel == 'tasks' else curses.A_DIM
+            win.addstr(1, 2, "No tasks in this list.", attr)
             return
 
         for idx, task in enumerate(tasks):
@@ -162,7 +164,7 @@ class UIManager:
         h, w = self.stdscr.getmaxyx()
         input_win = self.stdscr.subwin(1, w, h - 1, 0)
         input_win.erase()
-        input_win.addstr(0, 0, prompt, curses.color_pair(1))
+        input_win.addstr(0, 0, prompt, curses.color_pair(0))
         input_win.refresh()
 
         # Set up for user input
