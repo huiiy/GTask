@@ -52,6 +52,26 @@ To run the application, use the following command:
 tasks-tui
 ```
 
+### Keyboard Shortcuts
+
+| Key          | Action                                  | Panel      |
+| :----------- | :-------------------------------------- | :--------- |
+| `q`          | Quit application                        | Any        |
+| `↑` / `k`    | Move selection up                       | Any        |
+| `↓` / `j`    | Move selection down                     | Any        |
+| `←` / `h`    | Switch to Lists panel (from Tasks)      | Tasks      |
+| `→` / `l`    | Switch to Tasks panel (from Lists)      | Lists      |
+| `Tab`        | Toggle between Lists and Tasks panels   | Any        |
+| `Enter`      | Toggle task completion / Select list    | Tasks/Lists|
+| `o`          | Add new task / Add new list             | Tasks/Lists|
+| `d`          | Delete selected task / Delete selected list | Tasks/Lists|
+| `r`          | Rename selected task                    | Tasks      |
+| `c`          | Toggle task completion                  | Tasks      |
+| `w`          | Refresh data                            | Any        |
+| `a`          | Add due date to selected task           | Tasks      |
+| `i`          | Add notes to selected task              | Tasks      |
+| `p`          | Paste task / Paste list                 | Tasks/Lists|
+
 When you run the application for the first time, it will open a web browser and ask you to authorize the application to access your Google Tasks. After you authorize the application, it will create a `token.json` file in the `tasks-tui` directory. This file contains your access and refresh tokens, so you won't have to authorize the application every time you run it.
 
 ## Contributing
