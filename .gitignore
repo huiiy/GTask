@@ -1,15 +1,20 @@
-# Environment files
-.env
-venv/
-pycache/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
 
-# build artifacts
-*.pyc
+# Environments
+.env
+.venv
+venv/
+env/
+test_env/
+
+# Credentials
+token.json
+client_secrets.json
+
+# Build artifacts
 dist/
 build/
 *.egg-info/
-
-# Google API Credentials
-client_secret.json
-token.json
-credentials.json
