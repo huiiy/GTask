@@ -5,6 +5,7 @@
 
 import curses
 from dateutil.parser import isoparse
+import time
 
 class UIManager:
     """
@@ -13,7 +14,7 @@ class UIManager:
     def __init__(self, stdscr):
         self.stdscr = stdscr
         self.setup_colors()
-        self.active_panel = "tasks" # 'lists' or 'tasks'
+        self.active_panel = "lists" # 'lists' or 'tasks'
         self.selected_list_idx = 0
         self.selected_task_idx = 0
 
@@ -192,4 +193,14 @@ class UIManager:
             input_win.refresh()
 
         return input_string
+
+    def show_temporary_message(self, message):
+        """Displays a message on the bottom line for a short duration."""
+        h, w = self.stdscr.getmaxyx()
+        self.stdscr.addstr(h - 1, 0, message, curses.A_REVERSE)
+        self.stdscr.refresh()
+        time.sleep(1)
+        # Clear the line
+        self.stdscr.addstr(h - 1, 0, " " * (w - 1))
+        self.stdscr.refresh()
 

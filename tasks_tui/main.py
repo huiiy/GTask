@@ -7,6 +7,14 @@ from curses import wrapper
 from .task_service import TaskService
 from .ui_manager import UIManager
 import sys
+from dateutil.parser import ParserError, isoparse
+
+def is_valid_date(date_str):
+    try:
+        isoparse(date_str)
+        return True
+    except (ParserError, ValueError):
+        return False
 
 # Global State Management (simplified for TUI)
 class AppState:
@@ -105,9 +113,12 @@ def handle_input(stdscr, app_state, ui_manager):
     elif key == ord('a'):
         if ui_manager.active_panel == 'tasks' and app_state.tasks:
             new_date = ui_manager.get_user_input("Due Date: ")
-            selected_task = app_state.tasks[ui_manager.selected_task_idx]
-            app_state.service.change_date_task(app_state.active_list_id, selected_task['id'], new_date)
-            app_state.refresh_data()
+            if is_valid_date(new_date):
+                selected_task = app_state.tasks[ui_manager.selected_task_idx]
+                app_state.service.change_date_task(app_state.active_list_id, selected_task['id'], new_date)
+                app_state.refresh_data()
+            else:
+                ui_manager.show_temporary_message(f"Invalid date format: '{new_date}'")
 
     elif key == ord('i'):
         if ui_manager.active_panel == 'tasks' and app_state.tasks:
