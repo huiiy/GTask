@@ -22,5 +22,5 @@ build/
 
 # Dev Artifacts
 *.log
-*.swp
+*.sw*
 todo.md
