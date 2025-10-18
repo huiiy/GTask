@@ -13,8 +13,8 @@ A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
 *   Toggleable help panel.
 
 ## Screenshots
+<img width="1365" height="742" alt="image" src="https://github.com/user-attachments/assets/4c51a8ba-eac3-4a02-ab62-060d91150941" />
 
-(A new screenshot is needed)
 
 
 ## Installation
