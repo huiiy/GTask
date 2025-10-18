@@ -75,6 +75,15 @@ tasks-tui
 | `p`          | Paste task / Paste list                 | Tasks/Lists|
 | `?`          | Toggle Help                             | Any        |
 
+### Task Status Symbols
+
+| Symbol | Meaning         |
+| :----- | :-------------- |
+| `[ ]`  | Task needs action |
+| `[X]`  | Task completed  |
+| `*`    | Task has notes  |
+| `>`    | Task has subtasks |
+
 When you run the application for the first time, it will open a web browser and ask you to authorize the application to access your Google Tasks. After you authorize the application, it will create a `token.json` file in the `tasks-tui` directory. This file contains your access and refresh tokens, so you won't have to authorize the application every time you run it.
 
 ## Contributing

@@ -171,7 +171,7 @@ class UIManager:
             note_indicator = "*" if "notes" in task and task["notes"] else " "
             has_children_indicator = " >" if task['id'] in parent_ids else ""
 
-            display_line = f"{symbol} {task_title}{note_indicator}{has_children_indicator}{due_date_str}"
+            display_line = f"{symbol} {note_indicator}{task_title}{due_date_str}{has_children_indicator}"
             # Truncate if too long, ensuring space for selection highlight
             win.addstr(y_pos, 1, display_line[:max_x - 2], attr)
 
