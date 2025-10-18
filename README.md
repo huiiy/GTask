@@ -5,14 +5,16 @@ A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
 ## Features
 
 *   View your Google Tasks lists and tasks in a two-panel layout.
-*   Add new tasks to your lists.
+*   Add new tasks and lists.
 *   Mark tasks as complete.
+*   Rename tasks and lists.
 *   Switch between your task lists.
 *   Vim-style keybindings for navigation.
+*   Toggleable help panel.
 
 ## Screenshots
 
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/b2c4e1dc-766c-475f-8e6f-2b1eed6f205f" />
+(A new screenshot is needed)
 
 
 ## Installation
@@ -58,20 +60,20 @@ tasks-tui
 | Key          | Action                                  | Panel      |
 | :----------- | :-------------------------------------- | :--------- |
 | `q`          | Quit application                        | Any        |
+| `w`          | Write and Sync                          | Any        |
 | `↑` / `k`    | Move selection up                       | Any        |
 | `↓` / `j`    | Move selection down                     | Any        |
 | `←` / `h`    | Switch to Lists panel (from Tasks)      | Tasks      |
 | `→` / `l`    | Switch to Tasks panel (from Lists)      | Lists      |
 | `Tab`        | Toggle between Lists and Tasks panels   | Any        |
-| `Enter`      | Toggle task completion / Select list    | Tasks/Lists|
 | `o`          | Add new task / Add new list             | Tasks/Lists|
 | `d`          | Delete selected task / Delete selected list | Tasks/Lists|
-| `r`          | Rename selected task                    | Tasks      |
+| `r`          | Rename selected task / Rename selected list | Tasks/Lists|
 | `c`          | Toggle task completion                  | Tasks      |
-| `w`          | Refresh data                            | Any        |
 | `a`          | Add due date to selected task           | Tasks      |
 | `i`          | Add notes to selected task              | Tasks      |
 | `p`          | Paste task / Paste list                 | Tasks/Lists|
+| `?`          | Toggle Help                             | Any        |
 
 When you run the application for the first time, it will open a web browser and ask you to authorize the application to access your Google Tasks. After you authorize the application, it will create a `token.json` file in the `tasks-tui` directory. This file contains your access and refresh tokens, so you won't have to authorize the application every time you run it.
 
