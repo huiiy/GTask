@@ -35,7 +35,7 @@ class UIManager:
         title_str = f" {title} "
         win.addstr(0, 2, title_str, curses.color_pair(3) | curses.A_BOLD)
 
-    def draw_layout(self, lists, tasks, active_list_id, task_counts):
+    def draw_layout(self, lists, tasks, active_list_id, task_counts, parent_task=None, parent_ids=None):
         """Draws the main two-panel layout."""
         h, w = self.stdscr.getmaxyx()
 
@@ -51,7 +51,7 @@ class UIManager:
 
         # 3. Draw content inside the windows
         self._draw_list_panel(list_win, lists, active_list_id, task_counts)
-        self._draw_task_panel(task_win, tasks)
+        self._draw_task_panel(task_win, tasks, parent_task, parent_ids)
 
         # 4. Refresh all windows
         list_win.noutrefresh()
@@ -86,11 +86,15 @@ class UIManager:
 
         win.addstr(max_y - 1, 1, "Use A to Add List", curses.A_DIM)
 
-    def _draw_task_panel(self, win, tasks):
+    def _draw_task_panel(self, win, tasks, parent_task=None, parent_ids=None):
         """Draws the individual Tasks."""
         win.erase()
-        self._draw_border(win, "Tasks (T)")
+        title = f"Tasks in {parent_task['title']}" if parent_task else "Tasks (T)"
+        self._draw_border(win, title)
         max_y, max_x = win.getmaxyx()
+
+        if parent_ids is None:
+            parent_ids = set()
 
         if not tasks:
             attr = curses.color_pair(5) if self.active_panel == 'tasks' else curses.A_DIM
@@ -126,7 +130,10 @@ class UIManager:
                 except ValueError:
                     due_date_str = " (Invalid Date)"
 
-            display_line = f"{symbol} {task_title}{due_date_str}"
+            note_indicator = "*" if "notes" in task and task["notes"] else " "
+            has_children_indicator = " >" if task['id'] in parent_ids else ""
+
+            display_line = f"{symbol} {task_title}{note_indicator}{has_children_indicator}{due_date_str}"
             # Truncate if too long, ensuring space for selection highlight
             win.addstr(y_pos, 1, display_line[:max_x - 2], attr)
 
@@ -182,17 +189,26 @@ class UIManager:
         input_win.addstr(0, 0, prompt, curses.color_pair(0))
         input_win.refresh()
 
-        # Set up for user input
-        curses.echo()
         input_string = ""
         try:
-            # max width is w - len(prompt) - 2 for borders/safety
-            input_string = input_win.getstr(0, len(prompt), w - len(prompt) - 2).decode('utf-8')
-        except:
-            # Handle potential resize/error during input
-            pass
+            input_win.keypad(True)
+            while True:
+                char = input_win.getch()
+                if char == 27: # Escape key
+                    input_string = ""
+                    break
+                elif char == curses.KEY_ENTER or char == 10 or char == 13:
+                    break
+                elif char == curses.KEY_BACKSPACE or char == 127 or char == 8:
+                    if len(input_string) > 0:
+                        input_string = input_string[:-1]
+                        input_win.addstr(0, len(prompt) + len(input_string), " ")
+                        input_win.move(0, len(prompt) + len(input_string))
+                else:
+                    input_string += chr(char)
+                    input_win.addstr(0, len(prompt) + len(input_string) - 1, chr(char))
+                input_win.refresh()
         finally:
-            curses.noecho()
             input_win.erase()
             input_win.refresh()
 
