@@ -4,16 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tasks-tui-app"
-version = "0.1.1"
+version = "0.1.2"
 description = "A command-line TUI for managing Google Tasks."
 readme = "README.md"
 authors = [
     {name = "Huy Pham", email = "huyquangpham2005@gmai.com"},
 ]
-license = {file = "LICENSE"}
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Environment :: Console :: Curses",
 ]

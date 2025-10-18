@@ -60,6 +60,7 @@ class AppState:
         self.list_buffer = ""
         self.task_buffer = ""
         self.calculate_task_counts()
+        self.show_help = False
 
     def calculate_task_counts(self):
         """Calculates the number of tasks in each list."""
@@ -103,8 +104,9 @@ def handle_input(stdscr, app_state, ui_manager):
     # Quitting
     if key in [ord('q'), ord('Q')]:
         if app_state.service.dirty:
-            ui_manager.show_temporary_message("Syncing before exit...")
+            ui_manager.start_sync_animation()
             app_state.service.sync_to_google()
+            ui_manager.stop_sync_animation()
         return False
 
     # Movement
@@ -138,17 +140,6 @@ def handle_input(stdscr, app_state, ui_manager):
             ui_manager.selected_task_idx = 0
             
     # Action Keys
-    elif key == ord('\n'): # ENTER key
-        if ui_manager.active_panel == 'tasks' and app_state.tasks:
-            # Toggle task status
-            selected_task = app_state.tasks[ui_manager.selected_task_idx]
-            app_state.service.toggle_task_status(app_state.active_list_id, selected_task["id"])
-            app_state.refresh_data() # Refresh display after change
-        elif ui_manager.active_panel == 'lists' and app_state.task_lists:
-            # Load selected list
-            selected_list = app_state.task_lists[ui_manager.selected_list_idx]
-            app_state.change_active_list(selected_list["id"])
-            ui_manager.selected_task_idx = 0 # Reset task selection
 
     elif key == ord('c'):
             # Toggle task status
@@ -157,9 +148,10 @@ def handle_input(stdscr, app_state, ui_manager):
             app_state.refresh_data() # Refresh display after change
 
     elif key == ord('w'):
-        ui_manager.show_temporary_message("Syncing...")
+        ui_manager.start_sync_animation()
         app_state.service.sync_to_google()
         app_state.service.sync_from_google()
+        ui_manager.stop_sync_animation()
         app_state.refresh_data()
 
     elif key == ord('r'):
@@ -184,6 +176,7 @@ def handle_input(stdscr, app_state, ui_manager):
                 app_state.refresh_data()
             else:
                 ui_manager.show_temporary_message(f"Invalid date format: '{new_date}'")
+
 
     elif key == ord('i'):
         if ui_manager.active_panel == 'tasks' and app_state.tasks:
@@ -253,6 +246,9 @@ def handle_input(stdscr, app_state, ui_manager):
                 app_state.service.add_list(new_title)
                 app_state.refresh_data()
 
+    elif key == ord('?'):
+        ui_manager.toggle_help()
+
 
 
     return True # Keep the loop running
@@ -267,9 +263,10 @@ def main_loop(stdscr):
     # Disable cursor visibility for a cleaner TUI
     curses.curs_set(0)
 
-    ui_manager.show_temporary_message("Syncing...")
+    ui_manager.start_sync_animation()
     app_state.service.sync_to_google()
     app_state.service.sync_from_google()
+    ui_manager.stop_sync_animation()
     app_state.refresh_data()
 
     running = True
