@@ -23,20 +23,39 @@ class AppState:
         self.service = task_service
         self.task_lists = self.service.get_task_lists()
         self.active_list_id = self.service.active_list_id
-        self.tasks = self.service.get_tasks_for_list(self.active_list_id)
+        self.filtered_tasks_cache = {}  # Cache for filtered tasks
+        self.task_counts = {}
+        self.tasks = self.get_tasks_for_active_list()
         self.list_buffer = ""
         self.task_buffer = ""
+        self.calculate_task_counts()
+
+    def calculate_task_counts(self):
+        """Calculates the number of tasks in each list."""
+        for task_list in self.task_lists:
+            list_id = task_list['id']
+            self.task_counts[list_id] = len(self.service.get_tasks_for_list(list_id))
+
+    def get_tasks_for_active_list(self):
+        """Retrieves tasks for the active list, using cache if possible."""
+        if self.active_list_id not in self.filtered_tasks_cache or self.service.dirty:
+            # If not in cache or data is dirty, fetch and cache it
+            tasks = self.service.get_tasks_for_list(self.active_list_id)
+            self.filtered_tasks_cache[self.active_list_id] = tasks
+        return self.filtered_tasks_cache[self.active_list_id]
 
     def refresh_data(self):
-        """Refreshes all data from the service layer."""
+        """Refreshes all data from the service layer and clears the cache."""
         self.task_lists = self.service.get_task_lists()
-        self.tasks = self.service.get_tasks_for_list(self.active_list_id)
+        self.filtered_tasks_cache.clear()  # Invalidate the cache
+        self.tasks = self.get_tasks_for_active_list()
+        self.calculate_task_counts()
 
     def change_active_list(self, list_id):
-        """Updates the active list and fetches new tasks."""
+        """Updates the active list and fetches new tasks, using the cache."""
         if self.service.set_active_list(list_id):
             self.active_list_id = list_id
-            self.tasks = self.service.get_tasks_for_list(self.active_list_id)
+            self.tasks = self.get_tasks_for_active_list()
             return True
         return False
 
@@ -48,6 +67,9 @@ def handle_input(stdscr, app_state, ui_manager):
 
     # Quitting
     if key in [ord('q'), ord('Q')]:
+        if app_state.service.dirty:
+            ui_manager.show_temporary_message("Syncing before exit...")
+            app_state.service.sync_to_google()
         return False
 
     # Movement
@@ -66,7 +88,6 @@ def handle_input(stdscr, app_state, ui_manager):
             ui_manager.toggle_panel()
     elif key == curses.KEY_RIGHT or key == ord('l'):
         if ui_manager.active_panel == 'lists':
-            # TODO check if selected list is not current active list, reduce fetch time
             selected_list = app_state.task_lists[ui_manager.selected_list_idx]
             if app_state.active_list_id != selected_list['id']:
                 app_state.change_active_list(selected_list["id"])
@@ -98,6 +119,9 @@ def handle_input(stdscr, app_state, ui_manager):
             app_state.refresh_data() # Refresh display after change
 
     elif key == ord('w'):
+        ui_manager.show_temporary_message("Syncing...")
+        app_state.service.sync_to_google()
+        app_state.service.sync_from_google()
         app_state.refresh_data()
 
     elif key == ord('r'):
@@ -108,7 +132,10 @@ def handle_input(stdscr, app_state, ui_manager):
             app_state.refresh_data() # Refresh display after change
         elif ui_manager.active_panel == 'lists' and app_state.task_lists:
             new_title = ui_manager.get_user_input("New List Title: ")
-            return
+            if new_title:
+                selected_list = app_state.task_lists[ui_manager.selected_list_idx]
+                app_state.service.rename_list(selected_list['id'], new_title)
+                app_state.refresh_data()
 
     elif key == ord('a'):
         if ui_manager.active_panel == 'tasks' and app_state.tasks:
@@ -183,6 +210,11 @@ def main_loop(stdscr):
     # Disable cursor visibility for a cleaner TUI
     curses.curs_set(0)
 
+    ui_manager.show_temporary_message("Syncing...")
+    app_state.service.sync_to_google()
+    app_state.service.sync_from_google()
+    app_state.refresh_data()
+
     running = True
     while running:
         # 2. Draw the UI based on current state
@@ -190,7 +222,8 @@ def main_loop(stdscr):
             ui_manager.draw_layout(
                 app_state.task_lists,
                 app_state.tasks,
-                app_state.active_list_id
+                app_state.active_list_id,
+                app_state.task_counts
             )
             curses.doupdate()
         except curses.error as e:

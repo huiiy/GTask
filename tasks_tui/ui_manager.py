@@ -35,7 +35,7 @@ class UIManager:
         title_str = f" {title} "
         win.addstr(0, 2, title_str, curses.color_pair(3) | curses.A_BOLD)
 
-    def draw_layout(self, lists, tasks, active_list_id):
+    def draw_layout(self, lists, tasks, active_list_id, task_counts):
         """Draws the main two-panel layout."""
         h, w = self.stdscr.getmaxyx()
 
@@ -50,14 +50,14 @@ class UIManager:
         task_win = self.stdscr.subwin(h, task_width, 0, list_width)
 
         # 3. Draw content inside the windows
-        self._draw_list_panel(list_win, lists, active_list_id)
+        self._draw_list_panel(list_win, lists, active_list_id, task_counts)
         self._draw_task_panel(task_win, tasks)
 
         # 4. Refresh all windows
         list_win.noutrefresh()
         task_win.noutrefresh()
 
-    def _draw_list_panel(self, win, lists, active_list_id):
+    def _draw_list_panel(self, win, lists, active_list_id, task_counts):
         """Draws the Task List titles."""
         win.erase()
         self._draw_border(win, "Task Lists (L)")
@@ -65,6 +65,10 @@ class UIManager:
 
         for idx, list_item in enumerate(lists):
             list_title = list_item.get("title", "Untitled List")
+            list_id = list_item.get("id")
+            task_count = task_counts.get(list_id, 0)
+            display_title = f"{list_title} ({task_count})"
+
             is_active = list_item["id"] == active_list_id
             is_selected = self.active_panel == 'lists' and idx == self.selected_list_idx
             y_pos = idx + 1 # Start drawing content on line 1
@@ -78,7 +82,7 @@ class UIManager:
             if is_selected:
                 attr |= curses.color_pair(5)
 
-            win.addstr(y_pos, 1, f"{list_title:<{max_x-2}}", attr)
+            win.addstr(y_pos, 1, f"{display_title:<{max_x-2}}", attr)
 
         win.addstr(max_y - 1, 1, "Use A to Add List", curses.A_DIM)
 
@@ -197,10 +201,10 @@ class UIManager:
     def show_temporary_message(self, message):
         """Displays a message on the bottom line for a short duration."""
         h, w = self.stdscr.getmaxyx()
-        self.stdscr.addstr(h - 1, 0, message, curses.A_REVERSE)
+        self.stdscr.addstr(h - 2, 0, message, curses.A_REVERSE)
         self.stdscr.refresh()
-        time.sleep(1)
+        #time.sleep(1)
         # Clear the line
-        self.stdscr.addstr(h - 1, 0, " " * (w - 1))
-        self.stdscr.refresh()
+        #self.stdscr.addstr(h - 1, 0, " " * (w - 1))
+        #self.stdscr.refresh()
 
