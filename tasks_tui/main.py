@@ -150,7 +150,6 @@ def handle_input(stdscr, app_state, ui_manager):
     elif key == ord('w'):
         ui_manager.start_sync_animation()
         app_state.service.sync_to_google()
-        app_state.service.sync_from_google()
         ui_manager.stop_sync_animation()
         app_state.refresh_data()
 
@@ -264,7 +263,6 @@ def main_loop(stdscr):
     curses.curs_set(0)
 
     ui_manager.start_sync_animation()
-    app_state.service.sync_to_google()
     app_state.service.sync_from_google()
     ui_manager.stop_sync_animation()
     app_state.refresh_data()

@@ -12,9 +12,11 @@ class TaskService:
         self.service = build('tasks', 'v1', credentials=self.creds)
         self.data = local_storage.load_data()
         self.dirty = False
+        self.initial_sync_completed = False
 
         if not self.data or not self.data['task_lists']:
             self.sync_from_google()
+            self.initial_sync_completed = True
 
         self.active_list_id = self._get_default_task_list_id()
 
@@ -24,6 +26,8 @@ class TaskService:
 
     def sync_from_google(self):
         """Fetches all data from Google Tasks and updates the local cache."""
+        if self.initial_sync_completed:
+            return
         task_lists = self.service.tasklists().list().execute().get('items', [])
         self.data['task_lists'] = task_lists
         self.data['tasks'] = {}
@@ -278,7 +282,41 @@ class TaskService:
         if not self.dirty:
             return
 
-        # Sync lists (omitted for now)
+        # Fetch all google lists for comparison
+        google_lists_map = {lst['id']: lst for lst in self.service.tasklists().list().execute().get('items', [])}
+
+        # Sync lists
+        for i, task_list in enumerate(self.data['task_lists']):
+            if task_list.get('deleted'):
+                if not task_list['id'].startswith('temp_'):
+                    try:
+                        self.service.tasklists().delete(tasklist=task_list['id']).execute()
+                    except Exception as e:
+                        pass  # Already deleted
+            elif task_list['id'].startswith('temp_list_'):
+                # This is a new list, create it
+                new_list_body = {'title': task_list['title']}
+                new_list = self.service.tasklists().insert(body=new_list_body).execute()
+                
+                # Update the local list with the new ID
+                old_id = task_list['id']
+                self.data['task_lists'][i] = new_list
+
+                # Update the tasks with the new list ID
+                if old_id in self.data['tasks']:
+                    self.data['tasks'][new_list['id']] = self.data['tasks'].pop(old_id)
+
+            else:
+                # Check for renames
+                google_list = google_lists_map.get(task_list['id'])
+                if google_list and task_list.get('title') != google_list.get('title'):
+                    self.service.tasklists().patch(tasklist=task_list['id'], body={'title': task_list.get('title')}).execute()
+
+        # Remove deleted lists from local cache
+        self.data['task_lists'] = [lst for lst in self.data['task_lists'] if not lst.get('deleted')]
+        for list_id in list(self.data['tasks'].keys()):
+            if list_id not in [lst['id'] for lst in self.data['task_lists']]:
+                del self.data['tasks'][list_id]
 
         for list_id, local_tasks_list in self.data['tasks'].items():
             if list_id.startswith('temp_list_'):
