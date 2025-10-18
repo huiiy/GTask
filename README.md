@@ -45,7 +45,7 @@ A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
     *   Enable the **Google Tasks API** for your project.
     *   Create an **OAuth 2.0 Client ID** for a **Desktop application**.
     *   Download the JSON file and rename it to `client_secrets.json`.
-    *   Place the `client_secrets.json` file in the ~/.gtask where you will run the `tasks-tui` command.
+    *   Place the `client_secrets.json` file in the ~/.gtask.
 
 ## Usage
 
