@@ -59,6 +59,8 @@ class AppState:
         self.tasks = self.get_tasks_for_active_list()
         self.list_buffer = ""
         self.task_buffer = ""
+        self.parent_task_id_stack = []
+        self.parent_task_idx_stack = []
         self.calculate_task_counts()
         self.show_help = False
 
@@ -122,8 +124,10 @@ def handle_input(stdscr, app_state, ui_manager):
             ui_manager.update_list_selection(app_state.task_lists, 1)
     elif key == curses.KEY_LEFT or key == ord('h'):
         if app_state.current_parent_task_id:
-            app_state.current_parent_task_id = None
+            app_state.current_parent_task_id = app_state.parent_task_id_stack.pop()
             app_state.refresh_data()
+            if app_state.parent_task_idx_stack:
+                ui_manager.selected_task_idx = app_state.parent_task_idx_stack.pop()
         elif ui_manager.active_panel == 'tasks':
             ui_manager.toggle_panel()
     elif key == curses.KEY_RIGHT or key == ord('l'):
@@ -135,6 +139,8 @@ def handle_input(stdscr, app_state, ui_manager):
             ui_manager.toggle_panel()
         elif ui_manager.active_panel == 'tasks' and app_state.tasks:
             selected_task = app_state.tasks[ui_manager.selected_task_idx]
+            app_state.parent_task_id_stack.append(app_state.current_parent_task_id)
+            app_state.parent_task_idx_stack.append(ui_manager.selected_task_idx)
             app_state.current_parent_task_id = selected_task['id']
             app_state.refresh_data()
             ui_manager.selected_task_idx = 0
