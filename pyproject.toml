@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tasks-tui-app"
-version = "0.1.3"
+version = "0.1.4"
 description = "A command-line TUI for managing Google Tasks."
 readme = "README.md"
 authors = [
