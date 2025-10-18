@@ -14,6 +14,7 @@ test_env/
 token.json
 client_secrets.json
 credentials.json
+local_tasks.json
 
 # Build artifacts
 dist/
