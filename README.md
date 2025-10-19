@@ -2,15 +2,17 @@
 
 A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
 
+## Disclaimer
+This application only runs natively on MacOs and Linus boxes due to its dependencies on Python's Curses. I am working to migrate this application over to Uni-Curses to support cross-platform. 
 ## Features
 
-*   View your Google Tasks lists and tasks in a two-panel layout.
+*   View your Google Tasks directly in the terminal
 *   Add new tasks and lists.
 *   Mark tasks as complete.
 *   Rename tasks and lists.
 *   Switch between your task lists.
+*   Add due dates, notes, or subtasks
 *   Vim-style keybindings for navigation.
-*   Toggleable help panel.
 
 ## Screenshots
 <img width="1365" height="742" alt="image" src="https://github.com/user-attachments/assets/4c51a8ba-eac3-4a02-ab62-060d91150941" />
@@ -65,7 +67,6 @@ tasks-tui
 | `↓` / `j`    | Move selection down                     | Any        |
 | `←` / `h`    | Switch to Lists panel (from Tasks)      | Tasks      |
 | `→` / `l`    | Switch to Tasks panel (from Lists)      | Lists      |
-| `Tab`        | Toggle between Lists and Tasks panels   | Any        |
 | `o`          | Add new task / Add new list             | Tasks/Lists|
 | `d`          | Delete selected task / Delete selected list | Tasks/Lists|
 | `r`          | Rename selected task / Rename selected list | Tasks/Lists|
