@@ -3,7 +3,7 @@
 # It receives data from the main application logic and draws it.
 # It should not contain any Google Tasks API interaction logic.
 
-import curses
+from unicurses import *
 from dateutil.parser import isoparse
 import time
 import threading
@@ -21,27 +21,26 @@ class UIManager:
         self.syncing = False
         self.animation_thread = None
         self.show_help = False
+        self.animation_frame = ""
 
     def setup_colors(self):
         """Initializes color pairs for the TUI."""
         # Use simple color pairs suitable for a terminal
-        curses.start_color()
-        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)  # Highlight
-        curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Completed
-        curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)   # Header
-        curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK) # Active List
-        curses.init_pair(5, curses.COLOR_BLUE, curses.COLOR_BLACK)   # Selected
+        start_color()
+        init_pair(1, COLOR_BLACK, COLOR_WHITE)  # Highlight
+        init_pair(2, COLOR_GREEN, COLOR_BLACK)  # Completed
+        init_pair(3, COLOR_CYAN, COLOR_BLACK)   # Header
+        init_pair(4, COLOR_YELLOW, COLOR_BLACK) # Active List
+        init_pair(5, COLOR_BLUE, COLOR_BLACK)   # Selected
 
     def _draw_border(self, win, title):
         """Draws a simple box border and title."""
-        h, w = win.getmaxyx()
-        win.box()
+        wborder(win)
         title_str = f" {title} "
-        win.addstr(0, 2, title_str, curses.color_pair(3) | curses.A_BOLD)
+        mvwaddstr(win, 0, 2, title_str, color_pair(3) | A_BOLD)
 
     def draw_layout(self, lists, tasks, active_list_id, task_counts, parent_task=None, parent_ids=None):
-        """Draws the main two-panel layout."""
-        h, w = self.stdscr.getmaxyx()
+        h, w = getmaxyx(self.stdscr)
 
         # 1. Calculate window sizes
         list_width = max(25, w // 4) # Lists take up at least 25 chars or 1/4th of the screen
@@ -49,31 +48,36 @@ class UIManager:
 
         # 2. Create window objects
         # Lists Window (Left Panel)
-        list_win = self.stdscr.subwin(h, list_width, 0, 0)
+        list_win = newwin(h, list_width, 0, 0)
         # Tasks Window (Right Panel)
-        task_win = self.stdscr.subwin(h, task_width, 0, list_width)
+        task_win = newwin(h, task_width, 0, list_width)
 
         # 3. Draw content inside the windows
         self._draw_list_panel(list_win, lists, active_list_id, task_counts)
         self._draw_task_panel(task_win, tasks, parent_task, parent_ids)
 
         # 4. Refresh all windows
-        list_win.noutrefresh()
-        task_win.noutrefresh()
+        wrefresh(list_win)
+        wrefresh(task_win)
 
         if self.show_help:
             self._draw_help_panel()
 
+        if self.syncing:
+            mvwaddstr(self.stdscr, h - 2, 1, self.animation_frame, A_NORMAL)
+        
+        doupdate()
+
     def _draw_help_panel(self):
         """Draws a help panel with controls."""
-        h, w = self.stdscr.getmaxyx()
+        h, w = getmaxyx(self.stdscr)
         help_h = 15
         help_w = 60
         help_y = (h - help_h) // 2
         help_x = (w - help_w) // 2
 
-        help_win = self.stdscr.subwin(help_h, help_w, help_y, help_x)
-        help_win.erase()
+        help_win = newwin(help_h, help_w, help_y, help_x)
+        werase(help_win)
         self._draw_border(help_win, "Help (?)")
 
         controls = [
@@ -91,15 +95,14 @@ class UIManager:
         ]
 
         for i, (key, desc) in enumerate(controls):
-            help_win.addstr(i + 1, 2, f"{key:<20} {desc}")
+            mvwaddstr(help_win, i + 1, 2, f"{key:<20} {desc}")
 
-        help_win.noutrefresh()
+        wrefresh(help_win)
 
     def _draw_list_panel(self, win, lists, active_list_id, task_counts):
         """Draws the Task List titles."""
-        win.erase()
-        self._draw_border(win, "Task Lists (L)")
-        max_y, max_x = win.getmaxyx()
+        werase(win)
+        max_y, max_x = getmaxyx(win)
 
         for idx, list_item in enumerate(lists):
             list_title = list_item.get("title", "Untitled List")
@@ -114,29 +117,29 @@ class UIManager:
             if y_pos >= max_y - 1:
                 break # Avoid drawing off the screen
 
-            attr = curses.A_NORMAL
+            attr = A_NORMAL
             if is_active:
-                attr |= curses.color_pair(4) # Yellow for the currently loaded list
+                attr |= color_pair(4) # Yellow for the currently loaded list
             if is_selected:
-                attr |= curses.color_pair(5)
+                attr |= color_pair(5)
 
-            win.addstr(y_pos, 1, f"{display_title:<{max_x-2}}", attr)
-            win.addstr(max_y - 1, max_x - 10, "(?) Help", curses.A_DIM)
+            mvwaddstr(win, y_pos, 1, f"{display_title:<{max_x-2}}", attr)
+            mvwaddstr(win, max_y - 1, max_x - 10, "(?) Help", A_DIM)
 
 
     def _draw_task_panel(self, win, tasks, parent_task=None, parent_ids=None):
         """Draws the individual Tasks."""
-        win.erase()
+        werase(win)
         title = f"Tasks in {parent_task['title']}" if parent_task else "Tasks (T)"
         self._draw_border(win, title)
-        max_y, max_x = win.getmaxyx()
+        max_y, max_x = getmaxyx(win)
 
         if parent_ids is None:
             parent_ids = set()
 
         if not tasks:
-            attr = curses.color_pair(5) if self.active_panel == 'tasks' else curses.A_DIM
-            win.addstr(1, 2, "No tasks in this list.", attr)
+            attr = color_pair(5) if self.active_panel == 'tasks' else A_DIM
+            mvwaddstr(win, 1, 2, "No tasks in this list.", attr)
             return
 
         for idx, task in enumerate(tasks):
@@ -148,15 +151,15 @@ class UIManager:
             if y_pos >= max_y - 2:
                 break # Avoid drawing off the screen
 
-            attr = curses.A_NORMAL
+            attr = A_NORMAL
             symbol = "[ ]"
 
             if status == "completed":
-                attr = curses.color_pair(2)
+                attr = color_pair(2)
                 symbol = "[X]"
 
             if is_selected:
-                attr = curses.color_pair(5)
+                attr = color_pair(5)
 
             # Pad the title to ensure highlight fills the line
             due_date_str = ""
@@ -164,7 +167,7 @@ class UIManager:
                 try:
                     # Google Tasks API returns 'due' in RFC 3339 format
                     due_date = isoparse(task["due"])
-                    due_date_str = f" (Due: {due_date.strftime("%Y-%m-%d")})"
+                    due_date_str = f" (Due: {due_date.strftime('%Y-%m-%d')})"
                 except ValueError:
                     due_date_str = " (Invalid Date)"
 
@@ -173,7 +176,7 @@ class UIManager:
 
             display_line = f"{symbol} {note_indicator}{task_title}{due_date_str}{has_children_indicator}"
             # Truncate if too long, ensuring space for selection highlight
-            win.addstr(y_pos, 1, display_line[:max_x - 2], attr)
+            mvwaddstr(win, y_pos, 1, display_line[:max_x - 2], attr)
 
     def update_task_selection(self, tasks, direction):
         """Moves the task selection cursor (up/down)."""
@@ -218,62 +221,44 @@ class UIManager:
         Gets a text string from the user at the bottom of the screen.
         This is a common helper function needed in curses applications.
         """
-        h, w = self.stdscr.getmaxyx()
-        input_win = self.stdscr.subwin(1, w, h - 1, 0)
-        input_win.erase()
-        input_win.addstr(0, 0, prompt, curses.color_pair(0))
-        input_win.refresh()
+        h, w = getmaxyx(self.stdscr)
+        input_win = newwin(1, w, h - 1, 0)
+        wmove(input_win, 0, 0)
+        waddstr(input_win, prompt, color_pair(0))
+        wrefresh(input_win)
 
         input_string = ""
         try:
-            input_win.keypad(True)
-            while True:
-                char = input_win.getch()
-                if char == 27: # Escape key
-                    input_string = ""
-                    break
-                elif char == curses.KEY_ENTER or char == 10 or char == 13:
-                    break
-                elif char == curses.KEY_BACKSPACE or char == 127 or char == 8:
-                    if len(input_string) > 0:
-                        input_string = input_string[:-1]
-                        input_win.addstr(0, len(prompt) + len(input_string), " ")
-                        input_win.move(0, len(prompt) + len(input_string))
-                else:
-                    input_string += chr(char)
-                    input_win.addstr(0, len(prompt) + len(input_string) - 1, chr(char))
-                input_win.refresh()
+            keypad(input_win, True)
+            echo()
+            input_string = wgetstr(input_win)
+            noecho()
         finally:
-            input_win.erase()
-            input_win.refresh()
+            werase(input_win)
+            wrefresh(input_win)
+            delwin(input_win)
 
+        if isinstance(input_string, bytes):
+            return input_string.decode('utf-8')
         return input_string
 
     def show_temporary_message(self, message):
-        """Displays a message on the bottom line for a short duration."""
-        h, w = self.stdscr.getmaxyx()
-        self.stdscr.addstr(h - 2, 1, message, curses.A_REVERSE)
-        self.stdscr.refresh()
+        h, w = getmaxyx(self.stdscr)
+        mvwaddstr(self.stdscr, h - 2, 1, message, A_REVERSE)
+        refresh()
         time.sleep(1)
         # Clear the line
-        self.stdscr.addstr(h - 2, 1, " " * (w - 2))
-        self.stdscr.refresh()
+        mvwaddstr(self.stdscr, h - 2, 1, " " * (len(message) + 1))
+        refresh()
 
     def _sync_animation(self):
         """The actual animation loop to be run in a thread."""
         braille_patterns = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]
         i = 0
         while self.syncing:
-            h, w = self.stdscr.getmaxyx()
-            message = f" {braille_patterns[i % len(braille_patterns)]} Syncing"
-            self.stdscr.addstr(h - 2, 1, message, curses.A_NORMAL)
-            self.stdscr.refresh()
+            self.animation_frame = f" {braille_patterns[i % len(braille_patterns)]} Syncing"
             time.sleep(0.1)
             i += 1
-        # Clear the animation message
-        h, w = self.stdscr.getmaxyx()
-        self.stdscr.addstr(h - 2, 1, " " * (w - 2)) # Clear the line
-        self.stdscr.refresh()
 
     def start_sync_animation(self):
         """Starts the sync animation in a separate thread."""
@@ -287,4 +272,6 @@ class UIManager:
         if self.syncing:
             self.syncing = False
             self.animation_thread.join()
-
+            h, w = getmaxyx(self.stdscr)
+            mvwaddstr(self.stdscr, h - 2, 1, " " * (w - 2)) # Clear the line
+            refresh()

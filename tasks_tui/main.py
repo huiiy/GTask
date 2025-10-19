@@ -2,8 +2,7 @@
 # Initializes the application, connects the TaskService (Model) and
 # the UIManager (View), and runs the main event loop.
 
-import curses
-from curses import wrapper
+from unicurses import *
 from .task_service import TaskService
 from .ui_manager import UIManager
 import sys
@@ -11,6 +10,7 @@ from dateutil.parser import ParserError, isoparse
 import os
 import subprocess
 import tempfile
+from unicurses import wrapper
 
 def open_editor_for_task_notes(stdscr, app_state, ui_manager):
     """Opens an editor for the task notes."""
@@ -24,11 +24,12 @@ def open_editor_for_task_notes(stdscr, app_state, ui_manager):
         temp_path = tf.name
 
     # Suspend curses and open the editor
-    curses.endwin()
+    def_prog_mode()
+    endwin()
     subprocess.call([editor, temp_path])
     # Resume curses
-    stdscr.clear()
-    stdscr.refresh()
+    reset_prog_mode()
+    doupdate()
 
     with open(temp_path, 'r', encoding='utf-8') as tf:
         new_note = tf.read()
@@ -101,7 +102,10 @@ def handle_input(stdscr, app_state, ui_manager):
     """
     Main input handler. Maps key presses to application actions.
     """
-    key = stdscr.getch()
+    try:
+        key = getch()
+    except curses.error:
+        return True # Ignore curses errors on getch()
 
     # Quitting
     if key in [ord('q'), ord('Q')]:
@@ -111,18 +115,21 @@ def handle_input(stdscr, app_state, ui_manager):
             ui_manager.stop_sync_animation()
         return False
 
+    if key == KEY_RESIZE:
+        return True # Triggers a redraw
+
     # Movement
-    elif key == curses.KEY_UP or key == ord('k'):
+    elif key == KEY_UP or key == ord('k'):
         if ui_manager.active_panel == 'tasks':
             ui_manager.update_task_selection(app_state.tasks, -1)
         elif ui_manager.active_panel == 'lists':
             ui_manager.update_list_selection(app_state.task_lists, -1)
-    elif key == curses.KEY_DOWN or key == ord('j'):
+    elif key == KEY_DOWN or key == ord('j'):
         if ui_manager.active_panel == 'tasks':
             ui_manager.update_task_selection(app_state.tasks, 1)
         elif ui_manager.active_panel == 'lists':
             ui_manager.update_list_selection(app_state.task_lists, 1)
-    elif key == curses.KEY_LEFT or key == ord('h'):
+    elif key == KEY_LEFT or key == ord('h'):
         if app_state.current_parent_task_id:
             app_state.current_parent_task_id = app_state.parent_task_id_stack.pop()
             app_state.refresh_data()
@@ -130,7 +137,7 @@ def handle_input(stdscr, app_state, ui_manager):
                 ui_manager.selected_task_idx = app_state.parent_task_idx_stack.pop()
         elif ui_manager.active_panel == 'tasks':
             ui_manager.toggle_panel()
-    elif key == curses.KEY_RIGHT or key == ord('l'):
+    elif key == KEY_RIGHT or key == ord('l'):
         if ui_manager.active_panel == 'lists':
             selected_list = app_state.task_lists[ui_manager.selected_list_idx]
             if app_state.active_list_id != selected_list['id']:
@@ -198,7 +205,7 @@ def handle_input(stdscr, app_state, ui_manager):
             # Adjust selection after deletion
             if ui_manager.selected_task_idx >= len(app_state.tasks) and len(app_state.tasks) > 0:
                 ui_manager.selected_task_idx = len(app_state.tasks) - 1
-        elif ui_manager.active_panel == 'lists' and app_state.task_lists:
+        elif ui_manager.active_panel == 'lists' and app_state.task_.lists:
             selected_list = app_state.task_lists[ui_manager.selected_list_idx]
             confirm = ui_manager.get_user_input(f"Delete list '{selected_list['title']}'? (y/n): ")
             if confirm.lower() == 'y':
@@ -266,7 +273,10 @@ def main_loop(stdscr):
     app_state = AppState(task_service)
 
     # Disable cursor visibility for a cleaner TUI
-    curses.curs_set(0)
+    curs_set(0)
+    noecho()
+    cbreak()
+    keypad(stdscr, True)
 
     ui_manager.start_sync_animation()
     app_state.service.sync_from_google()
@@ -291,17 +301,16 @@ def main_loop(stdscr):
                 parent_task=parent_task,
                 parent_ids=parent_ids
             )
-            curses.doupdate()
-        except curses.error as e:
+            doupdate()
+        except Exception as e:
             # Handles window resize errors gracefully
-            pass
+            ui_manager.show_temporary_message(f"Error: {e}")
 
         # 3. Handle User Input
         running = handle_input(stdscr, app_state, ui_manager)
 
 def cli():
     try:
-        # The wrapper handles initialization and safe cleanup of the curses environment
         wrapper(main_loop)
     except Exception as e:
         # Print the error before exiting the terminal session
