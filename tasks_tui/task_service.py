@@ -129,6 +129,8 @@ class TaskService:
         # If the task was completed, complete all its subtasks
         if toggled_task.get('status') == 'completed':
             self._cascade_complete(list_id, task_id)
+        else:
+            self._cascade_uncomplete(list_id, task_id)
                 
         return toggled_task
 
@@ -144,6 +146,20 @@ class TaskService:
                     task['status'] = 'completed'
                     self.dirty = True
                     self._cascade_complete(list_id, child_id)
+                    break
+
+    def _cascade_uncomplete(self, list_id, parent_id):
+        """Recursively completes all subtasks of a given parent."""
+        tasks = self.data['tasks'].get(list_id, [])
+        
+        child_tasks_ids = [task['id'] for task in tasks if task.get('parent') == parent_id]
+        
+        for child_id in child_tasks_ids:
+            for task in tasks:
+                if task['id'] == child_id:
+                    task['status'] = 'needsAction'
+                    self.dirty = True
+                    self._cascade_uncomplete(list_id, child_id)
                     break
 
     def delete_task(self, list_id, task_id):
