@@ -301,7 +301,6 @@ def main_loop(stdscr):
                 parent_task=parent_task,
                 parent_ids=parent_ids
             )
-            doupdate()
         except Exception as e:
             # Handles window resize errors gracefully
             ui_manager.show_temporary_message(f"Error: {e}")

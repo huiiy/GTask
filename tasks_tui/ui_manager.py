@@ -63,9 +63,6 @@ class UIManager:
         if self.show_help:
             self._draw_help_panel()
 
-        if self.syncing:
-            mvwaddstr(self.stdscr, h - 2, 1, self.animation_frame, A_NORMAL)
-        
         doupdate()
 
     def _draw_help_panel(self):
@@ -102,6 +99,7 @@ class UIManager:
     def _draw_list_panel(self, win, lists, active_list_id, task_counts):
         """Draws the Task List titles."""
         werase(win)
+        self._draw_border(win, "Lists (L)")
         max_y, max_x = getmaxyx(win)
 
         for idx, list_item in enumerate(lists):
@@ -255,8 +253,11 @@ class UIManager:
         """The actual animation loop to be run in a thread."""
         braille_patterns = ["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]
         i = 0
+        h, w = getmaxyx(self.stdscr)
         while self.syncing:
-            self.animation_frame = f" {braille_patterns[i % len(braille_patterns)]} Syncing"
+            animation_frame = f" {braille_patterns[i % len(braille_patterns)]} Syncing"
+            mvwaddstr(self.stdscr, h - 2, 1, animation_frame, A_NORMAL)
+            refresh()
             time.sleep(0.1)
             i += 1
 
@@ -264,6 +265,7 @@ class UIManager:
         """Starts the sync animation in a separate thread."""
         if not self.syncing:
             self.syncing = True
+            nodelay(self.stdscr, True)
             self.animation_thread = threading.Thread(target=self._sync_animation)
             self.animation_thread.start()
 
@@ -272,6 +274,7 @@ class UIManager:
         if self.syncing:
             self.syncing = False
             self.animation_thread.join()
+            nodelay(self.stdscr, False)
             h, w = getmaxyx(self.stdscr)
             mvwaddstr(self.stdscr, h - 2, 1, " " * (w - 2)) # Clear the line
             refresh()
