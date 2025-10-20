@@ -2,8 +2,6 @@
 
 A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
 
-## Disclaimer
-This application only runs natively on MacOs and Linus boxes due to its dependencies on Python's Curses. I am working to migrate this application over to Uni-Curses to support cross-platform. 
 ## Features
 
 *   View your Google Tasks directly in the terminal
