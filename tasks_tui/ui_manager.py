@@ -39,7 +39,7 @@ class UIManager:
         title_str = f" {title} "
         mvwaddstr(win, 0, 2, title_str, color_pair(3) | A_BOLD)
 
-    def draw_layout(self, lists, tasks, active_list_id, task_counts, parent_task=None, parent_ids=None):
+    def draw_layout(self, lists, tasks, active_list_id, task_counts, parent_task=None, parent_ids=None, children_counts=None):
         h, w = getmaxyx(self.stdscr)
 
         # 1. Calculate window sizes
@@ -54,7 +54,7 @@ class UIManager:
 
         # 3. Draw content inside the windows
         self._draw_list_panel(list_win, lists, active_list_id, task_counts)
-        self._draw_task_panel(task_win, tasks, parent_task, parent_ids)
+        self._draw_task_panel(task_win, tasks, parent_task, parent_ids, children_counts)
 
         # 4. Refresh all windows
         wrefresh(list_win)
@@ -99,7 +99,7 @@ class UIManager:
     def _draw_list_panel(self, win, lists, active_list_id, task_counts):
         """Draws the Task List titles."""
         werase(win)
-        self._draw_border(win, "Lists (L)")
+        self._draw_border(win, "Lists")
         max_y, max_x = getmaxyx(win)
 
         for idx, list_item in enumerate(lists):
@@ -125,15 +125,18 @@ class UIManager:
             mvwaddstr(win, max_y - 1, max_x - 10, "(?) Help", A_DIM)
 
 
-    def _draw_task_panel(self, win, tasks, parent_task=None, parent_ids=None):
+    def _draw_task_panel(self, win, tasks, parent_task=None, parent_ids=None, children_counts=None):
         """Draws the individual Tasks."""
         werase(win)
-        title = f"Tasks in {parent_task['title']}" if parent_task else "Tasks (T)"
+        title = f"Tasks in {parent_task['title']}" if parent_task else "Tasks"
         self._draw_border(win, title)
         max_y, max_x = getmaxyx(win)
 
         if parent_ids is None:
             parent_ids = set()
+        
+        if children_counts is None:
+            children_counts = {}
 
         if not tasks:
             attr = color_pair(5) if self.active_panel == 'tasks' else A_DIM
@@ -170,7 +173,8 @@ class UIManager:
                     due_date_str = " (Invalid Date)"
 
             note_indicator = "*" if "notes" in task and task["notes"] else " "
-            has_children_indicator = " >" if task['id'] in parent_ids else ""
+            children_count = children_counts.get(task['id'], 0)
+            has_children_indicator = f" ({children_count})" if children_count > 0 else ""
 
             display_line = f"{symbol} {note_indicator}{task_title}{due_date_str}{has_children_indicator}"
             # Truncate if too long, ensuring space for selection highlight

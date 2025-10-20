@@ -233,6 +233,29 @@ class TaskService:
                 parent_ids.add(task['parent'])
         return parent_ids
 
+    def get_children_count(self, list_id, task_id):
+        """Returns the number of children for a given task."""
+        if not list_id:
+            return 0
+        count = 0
+        for task in self.data['tasks'].get(list_id, []):
+            if task.get('parent') == task_id:
+                count += 1
+        return count
+
+    def get_children_counts(self, list_id):
+        """Returns a dictionary mapping task IDs to their children count."""
+        if not list_id:
+            return {}
+        counts = {}
+        for task in self.data['tasks'].get(list_id, []):
+            if task.get('parent'):
+                parent_id = task.get('parent')
+                if parent_id not in counts:
+                    counts[parent_id] = 0
+                counts[parent_id] += 1
+        return counts
+
     def set_active_list(self, list_id):
         """Changes the task list currently being viewed."""
         self.active_list_id = list_id

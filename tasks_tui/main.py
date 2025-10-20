@@ -292,6 +292,7 @@ def main_loop(stdscr):
                 parent_task = app_state.service.get_task(app_state.active_list_id, app_state.current_parent_task_id)
 
             parent_ids = app_state.service.get_parent_task_ids(app_state.active_list_id)
+            children_counts = app_state.service.get_children_counts(app_state.active_list_id)
 
             ui_manager.draw_layout(
                 app_state.task_lists,
@@ -299,7 +300,8 @@ def main_loop(stdscr):
                 app_state.active_list_id,
                 app_state.task_counts,
                 parent_task=parent_task,
-                parent_ids=parent_ids
+                parent_ids=parent_ids,
+                children_counts=children_counts
             )
         except Exception as e:
             # Handles window resize errors gracefully
