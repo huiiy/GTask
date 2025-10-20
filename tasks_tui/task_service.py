@@ -149,7 +149,7 @@ class TaskService:
                     break
 
     def _cascade_uncomplete(self, list_id, parent_id):
-        """Recursively completes all subtasks of a given parent."""
+        """Recursively un-completes all subtasks of a given parent."""
         tasks = self.data['tasks'].get(list_id, [])
         
         child_tasks_ids = [task['id'] for task in tasks if task.get('parent') == parent_id]
@@ -414,18 +414,36 @@ class TaskService:
                 unprocessed_new_tasks = remaining_tasks
 
             # Handle updated tasks
+            def update_children(parent_id):
+                for task in local_tasks_list:
+                    if task.get('parent') == parent_id:
+                        if not task['id'].startswith('temp_') and task['id'] in google_tasks_map:
+                            google_task = google_tasks_map[task['id']]
+                            
+                            update_body = {}
+                            if task.get('title') != google_task.get('title'): update_body['title'] = task.get('title')
+                            if task.get('notes') != google_task.get('notes'): update_body['notes'] = task.get('notes')
+                            if task.get('due') != google_task.get('due'): update_body['due'] = task.get('due')
+                            if task.get('status') != google_task.get('status'): update_body['status'] = task.get('status')
+                            
+                            if update_body:
+                                self.service.tasks().patch(tasklist=list_id, task=task['id'], body=update_body).execute()
+                        update_children(task['id'])
+
             for task in local_tasks_list:
-                if not task['id'].startswith('temp_') and task['id'] in google_tasks_map:
-                    google_task = google_tasks_map[task['id']]
-                    
-                    update_body = {}
-                    if task.get('title') != google_task.get('title'): update_body['title'] = task.get('title')
-                    if task.get('notes') != google_task.get('notes'): update_body['notes'] = task.get('notes')
-                    if task.get('due') != google_task.get('due'): update_body['due'] = task.get('due')
-                    if task.get('status') != google_task.get('status'): update_body['status'] = task.get('status')
-                    
-                    if update_body:
-                        self.service.tasks().patch(tasklist=list_id, task=task['id'], body=update_body).execute()
+                if not task.get('parent'):
+                    if not task['id'].startswith('temp_') and task['id'] in google_tasks_map:
+                        google_task = google_tasks_map[task['id']]
+                        
+                        update_body = {}
+                        if task.get('title') != google_task.get('title'): update_body['title'] = task.get('title')
+                        if task.get('notes') != google_task.get('notes'): update_body['notes'] = task.get('notes')
+                        if task.get('due') != google_task.get('due'): update_body['due'] = task.get('due')
+                        if task.get('status') != google_task.get('status'): update_body['status'] = task.get('status')
+                        
+                        if update_body:
+                            self.service.tasks().patch(tasklist=list_id, task=task['id'], body=update_body).execute()
+                    update_children(task['id'])
 
             # Handle deleted tasks
             deleted_tasks = [t for t in local_tasks_list if t.get('deleted')]
