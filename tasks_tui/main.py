@@ -205,7 +205,7 @@ def handle_input(stdscr, app_state, ui_manager):
             # Adjust selection after deletion
             if ui_manager.selected_task_idx >= len(app_state.tasks) and len(app_state.tasks) > 0:
                 ui_manager.selected_task_idx = len(app_state.tasks) - 1
-        elif ui_manager.active_panel == 'lists' and app_state.task_.lists:
+        elif ui_manager.active_panel == 'lists' and app_state.task_lists:
             selected_list = app_state.task_lists[ui_manager.selected_list_idx]
             confirm = ui_manager.get_user_input(f"Delete list '{selected_list['title']}'? (y/n): ")
             if confirm.lower() == 'y':
