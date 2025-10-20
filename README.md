@@ -85,7 +85,7 @@ tasks-tui
 | `*`    | Task has notes                                                              |
 | `>`    | Task has subtasks (subtasks of subtasks do not display in web Google Tasks) |
 
-When you run the application for the first time, it will open a web browser and ask you to authorize the application to access your Google Tasks. After you authorize the application, it will create a `token.json` file in the `tasks-tui` directory. This file contains your access and refresh tokens, so you won't have to authorize the application every time you run it.
+When you run the application for the first time, it will open a web browser and ask you to authorize the application to access your Google Tasks. After you authorize the application, it will create a `token.json` file in the `~/.gtask` directory. This file contains your access and refresh tokens, so you won't have to authorize the application every time you run it.
 
 ## Contributing
 
