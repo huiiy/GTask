@@ -38,7 +38,7 @@ A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
     pip install -r requirements.txt
     ```
 
-4.  **Enable the Google Tasks API and download your `client_secrets.json` file:**
+4.  **Enable the Google Tasks API [Guide](https://developers.google.com/workspace/tasks/quickstart/python)**
 
     *   Go to the [Google API Console](https://console.developers.google.com/).
     *   Create a new project.
