@@ -4,7 +4,7 @@
 # It should not contain any Google Tasks API interaction logic.
 
 from unicurses import *
-from dateutil.parser import isoparse
+from .task_dates import date_section, due_date
 import time
 import threading
 
@@ -18,6 +18,7 @@ class UIManager:
         self.active_panel = "lists" # 'lists' or 'tasks'
         self.selected_list_idx = 0
         self.selected_task_idx = 0
+        self.task_scroll_offset = 0
         self.syncing = False
         self.animation_thread = None
         self.show_help = False
@@ -139,19 +140,44 @@ class UIManager:
             children_counts = {}
 
         if not tasks:
+            self.task_scroll_offset = 0
             attr = color_pair(5) if self.active_panel == 'tasks' else A_DIM
             mvwaddstr(win, 1, 2, "No tasks in this list.", attr)
             return
 
+        # Headings are display rows, never selectable tasks.
+        rows = []
+        task_rows = []
+        section = None
         for idx, task in enumerate(tasks):
+            label = date_section(task)
+            if label != section:
+                rows.append((None, label))
+                section = label
+            task_rows.append(len(rows))
+            rows.append((idx, label))
+
+        self.selected_task_idx = min(max(0, self.selected_task_idx), len(tasks) - 1)
+        height = max(1, max_y - 3)
+        selected_row = task_rows[self.selected_task_idx]
+        offset = min(self.task_scroll_offset, max(0, len(rows) - height))
+        if selected_row < offset:
+            offset = selected_row
+        elif selected_row >= offset + height:
+            offset = selected_row - height + 1
+        # Keep the selected task's heading visible when space allows.
+        if height > 1 and offset == selected_row and offset > 0 and rows[offset - 1][0] is None:
+            offset -= 1
+        self.task_scroll_offset = offset
+
+        for y_pos, (idx, label) in enumerate(rows[offset:offset + height], start=1):
+            if idx is None:
+                mvwaddstr(win, y_pos, 2, label[:max_x - 4], color_pair(3) | A_BOLD)
+                continue
+            task = tasks[idx]
             task_title = task.get("title", "Untitled Task")
             status = task.get("status", "needsAction")
             is_selected = self.active_panel == 'tasks' and idx == self.selected_task_idx
-            y_pos = idx + 1 # Start drawing content on line 1
-
-            if y_pos >= max_y - 2:
-                break # Avoid drawing off the screen
-
             attr = A_NORMAL
             symbol = "[ ]"
 
@@ -164,13 +190,11 @@ class UIManager:
 
             # Pad the title to ensure highlight fills the line
             due_date_str = ""
-            if "due" in task:
-                try:
-                    # Google Tasks API returns 'due' in RFC 3339 format
-                    due_date = isoparse(task["due"])
-                    due_date_str = f" (Due: {due_date.strftime('%Y-%m-%d')})"
-                except ValueError:
-                    due_date_str = " (Invalid Date)"
+            due = due_date(task)
+            if label == "Overdue" and due:
+                due_date_str = f" (Due: {due:%Y-%m-%d})"
+            elif task.get("due") and due is None:
+                due_date_str = " (Invalid Date)"
 
             note_indicator = "*" if "notes" in task and task["notes"] else " "
             children_count = children_counts.get(task['id'], 0)
