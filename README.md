@@ -7,6 +7,7 @@ A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
 *   View your Google Tasks directly in the terminal
 *   Add new tasks and lists.
 *   Mark tasks as complete.
+*   Hide completed tasks by default; press `v` to show or hide them for the current session.
 *   Rename tasks and lists.
 *   Switch between your task lists.
 *   Add due dates, notes, or subtasks
@@ -69,6 +70,7 @@ tasks-tui
 | `d`          | Delete selection                        |
 | `r`          | Rename selection                        |
 | `c`          | Toggle task completion                  |
+| `v`          | Show/hide completed tasks               |
 | `a`          | Add due date            |
 | `i`          | Insert/view task note   |
 | `p`          | Paste from buffer       |

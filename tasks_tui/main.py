@@ -55,6 +55,7 @@ class AppState:
         self.task_lists = self.service.get_task_lists()
         self.active_list_id = self.service.active_list_id
         self.current_parent_task_id = None
+        self.show_completed = False
         self.filtered_tasks_cache = {}  # Cache for filtered tasks
         self.task_counts = {}
         self.tasks = self.get_tasks_for_active_list()
@@ -69,18 +70,22 @@ class AppState:
         """Calculates the number of tasks in each list."""
         for task_list in self.task_lists:
             list_id = task_list['id']
-            self.task_counts[list_id] = len(self.service.get_tasks_for_list(list_id))
+            self.task_counts[list_id] = len(self.visible_tasks(self.service.get_tasks_for_list(list_id)))
+
+    def visible_tasks(self, tasks):
+        """Apply the session's completion filter without changing cached data."""
+        return [task for task in tasks if self.show_completed or task.get('status') != 'completed']
 
     def get_tasks_for_active_list(self):
         """Retrieves tasks for the active list, using cache if possible."""
         if self.current_parent_task_id:
-            return self.service.get_subtasks(self.active_list_id, self.current_parent_task_id)
+            return self.visible_tasks(self.service.get_subtasks(self.active_list_id, self.current_parent_task_id))
         else:
             if self.active_list_id not in self.filtered_tasks_cache or self.service.dirty:
                 # If not in cache or data is dirty, fetch and cache it
                 tasks = self.service.get_tasks_for_list(self.active_list_id)
                 self.filtered_tasks_cache[self.active_list_id] = tasks
-            return self.filtered_tasks_cache[self.active_list_id]
+            return self.visible_tasks(self.filtered_tasks_cache[self.active_list_id])
 
     def refresh_data(self):
         """Refreshes all data from the service layer and clears the cache."""
@@ -135,6 +140,7 @@ def handle_input(stdscr, app_state, ui_manager):
             app_state.refresh_data()
             if app_state.parent_task_idx_stack:
                 ui_manager.selected_task_idx = app_state.parent_task_idx_stack.pop()
+                ui_manager.selected_task_idx = min(ui_manager.selected_task_idx, max(0, len(app_state.tasks) - 1))
         elif ui_manager.active_panel == 'tasks':
             ui_manager.toggle_panel()
     elif key == KEY_RIGHT or key == ord('l'):
@@ -154,11 +160,24 @@ def handle_input(stdscr, app_state, ui_manager):
             
     # Action Keys
 
+    elif key == ord('v'):
+        selected_id = None
+        if app_state.tasks:
+            selected_id = app_state.tasks[ui_manager.selected_task_idx]['id']
+        app_state.show_completed = not app_state.show_completed
+        app_state.refresh_data()
+        ui_manager.selected_task_idx = next(
+            (idx for idx, task in enumerate(app_state.tasks) if task['id'] == selected_id),
+            min(ui_manager.selected_task_idx, max(0, len(app_state.tasks) - 1)),
+        )
+
     elif key == ord('c'):
+        if ui_manager.active_panel == 'tasks' and app_state.tasks:
             # Toggle task status
             selected_task = app_state.tasks[ui_manager.selected_task_idx]
             app_state.service.toggle_task_status(app_state.active_list_id, selected_task["id"])
             app_state.refresh_data() # Refresh display after change
+            ui_manager.selected_task_idx = min(ui_manager.selected_task_idx, max(0, len(app_state.tasks) - 1))
 
     elif key == ord('w'):
         ui_manager.start_sync_animation()
@@ -293,6 +312,11 @@ def main_loop(stdscr):
 
             parent_ids = app_state.service.get_parent_task_ids(app_state.active_list_id)
             children_counts = app_state.service.get_children_counts(app_state.active_list_id)
+            if not app_state.show_completed:
+                children_counts = {
+                    task_id: len(app_state.visible_tasks(app_state.service.get_subtasks(app_state.active_list_id, task_id)))
+                    for task_id in children_counts
+                }
 
             ui_manager.draw_layout(
                 app_state.task_lists,
@@ -301,7 +325,8 @@ def main_loop(stdscr):
                 app_state.task_counts,
                 parent_task=parent_task,
                 parent_ids=parent_ids,
-                children_counts=children_counts
+                children_counts=children_counts,
+                show_completed=app_state.show_completed,
             )
         except Exception as e:
             # Handles window resize errors gracefully

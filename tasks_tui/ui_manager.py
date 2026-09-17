@@ -39,7 +39,7 @@ class UIManager:
         title_str = f" {title} "
         mvwaddstr(win, 0, 2, title_str, color_pair(3) | A_BOLD)
 
-    def draw_layout(self, lists, tasks, active_list_id, task_counts, parent_task=None, parent_ids=None, children_counts=None):
+    def draw_layout(self, lists, tasks, active_list_id, task_counts, parent_task=None, parent_ids=None, children_counts=None, show_completed=False):
         h, w = getmaxyx(self.stdscr)
 
         # 1. Calculate window sizes
@@ -54,7 +54,7 @@ class UIManager:
 
         # 3. Draw content inside the windows
         self._draw_list_panel(list_win, lists, active_list_id, task_counts)
-        self._draw_task_panel(task_win, tasks, parent_task, parent_ids, children_counts)
+        self._draw_task_panel(task_win, tasks, parent_task, parent_ids, children_counts, show_completed)
 
         # 4. Refresh all windows
         wrefresh(list_win)
@@ -82,6 +82,7 @@ class UIManager:
             ("w", "Write and Sync"),
             ("h/j/k/l", "Select List/Task/Subtask"),
             ("c", "Complete Toggle"),
+            ("v", "Show/Hide Completed Tasks"),
             ("r", "Rename Task/List"),
             ("a", "Add Due Date"),
             ("i", "Insert Note"),
@@ -125,12 +126,14 @@ class UIManager:
             mvwaddstr(win, max_y - 1, max_x - 10, "(?) Help", A_DIM)
 
 
-    def _draw_task_panel(self, win, tasks, parent_task=None, parent_ids=None, children_counts=None):
+    def _draw_task_panel(self, win, tasks, parent_task=None, parent_ids=None, children_counts=None, show_completed=False):
         """Draws the individual Tasks."""
         werase(win)
         title = f"Tasks in {parent_task['title']}" if parent_task else "Tasks"
         self._draw_border(win, title)
         max_y, max_x = getmaxyx(win)
+        visibility_hint = f"[v] Completed: {'shown' if show_completed else 'hidden'}"
+        mvwaddstr(win, max_y - 1, 2, visibility_hint[:max(0, max_x - 4)], A_DIM)
 
         if parent_ids is None:
             parent_ids = set()
@@ -140,7 +143,8 @@ class UIManager:
 
         if not tasks:
             attr = color_pair(5) if self.active_panel == 'tasks' else A_DIM
-            mvwaddstr(win, 1, 2, "No tasks in this list.", attr)
+            message = "No tasks in this list." if show_completed else "No incomplete tasks. Press v to show completed."
+            mvwaddstr(win, 1, 2, message[:max(0, max_x - 4)], attr)
             return
 
         for idx, task in enumerate(tasks):
