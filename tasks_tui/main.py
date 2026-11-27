@@ -5,6 +5,7 @@
 from unicurses import *
 from .task_service import TaskService
 from .ui_manager import UIManager
+from .task_dates import sort_tasks
 import sys
 from dateutil.parser import ParserError, isoparse
 import os
@@ -74,12 +75,12 @@ class AppState:
     def get_tasks_for_active_list(self):
         """Retrieves tasks for the active list, using cache if possible."""
         if self.current_parent_task_id:
-            return self.service.get_subtasks(self.active_list_id, self.current_parent_task_id)
+            return sort_tasks(self.service.get_subtasks(self.active_list_id, self.current_parent_task_id))
         else:
             if self.active_list_id not in self.filtered_tasks_cache or self.service.dirty:
                 # If not in cache or data is dirty, fetch and cache it
                 tasks = self.service.get_tasks_for_list(self.active_list_id)
-                self.filtered_tasks_cache[self.active_list_id] = tasks
+                self.filtered_tasks_cache[self.active_list_id] = sort_tasks(tasks)
             return self.filtered_tasks_cache[self.active_list_id]
 
     def refresh_data(self):
@@ -186,6 +187,10 @@ def handle_input(stdscr, app_state, ui_manager):
                 selected_task = app_state.tasks[ui_manager.selected_task_idx]
                 app_state.service.change_date_task(app_state.active_list_id, selected_task['id'], new_date)
                 app_state.refresh_data()
+                ui_manager.selected_task_idx = next(
+                    idx for idx, task in enumerate(app_state.tasks)
+                    if task['id'] == selected_task['id']
+                )
             else:
                 ui_manager.show_temporary_message(f"Invalid date format: '{new_date}'")
 

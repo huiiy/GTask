@@ -10,6 +10,8 @@ A simple, fast, and intuitive Terminal User Interface (TUI) for Google Tasks.
 *   Rename tasks and lists.
 *   Switch between your task lists.
 *   Add due dates, notes, or subtasks
+*   Tasks grouped by date: Overdue, Today, Tomorrow, upcoming dates, then No date.
+*   Scroll through date sections with the arrow keys or j/k; headings are not selectable.
 *   Vim-style keybindings for navigation.
 
 ## Screenshots
